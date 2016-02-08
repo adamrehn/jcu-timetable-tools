@@ -1,0 +1,100 @@
+html, body
+{
+	font-family: Helvetica,Arial,sans-serif;
+	margin: 0;
+}
+
+#controls table {
+	margin: 0 auto;
+}
+
+#controls table tr td {
+	text-align: left;
+}
+
+#controls table tr td:first-child {
+	text-align: right;
+}
+
+#controls table tr td:nth-child(2) {
+	padding-left: 0.5em;
+}
+
+#controls, #controls table tr td.submit, p.instructions {
+	text-align: center;
+}
+
+#controls #subjects {
+	width: 25em;
+}
+
+.timetable
+{
+	border-collapse: collapse;
+	margin-top: 2em;
+	width: 100%;
+}
+
+.timetable td {
+	height: 2em;
+}
+
+.timetable td, .timetable th
+{
+	font-size: 0.8em;
+	border: 1px solid #ddd;
+	background-color: #fff;
+	vertical-align: top;
+	padding: 0;
+	margin: 0;
+}
+
+.timetable .event
+{
+	border: 1px #999 solid;
+	line-height: 1.25em;
+	padding: 1em;
+}
+
+.timetable .event.light, .timetable .event.light a {
+	color: #000;
+}
+
+.timetable .event.dark, .timetable .event.dark a {
+	color: #fff;
+}
+
+.timetable .event strong
+{
+	display: block;
+	padding-bottom: 0.5em;
+}
+
+.timetable th, .timetable .time, .timetable .topleft
+{
+	color: #fff;
+	padding: 0.5em 0;
+	background: #777777;
+	background: -moz-linear-gradient(top, #777777 0%, #666666 100%);
+	background: -webkit-linear-gradient(top, #777777 0%,#666666 100%);
+	background: linear-gradient(to bottom, #777777 0%,#666666 100%);
+}
+
+p.instructions
+{
+	font-size: 0.8em;
+	margin: 2em 0.5em;
+}
+
+@media print
+{
+	#controls {
+		display: none;
+	}
+	
+	.timetable th, .timetable .time, .timetable .topleft, .timetable .event, .timetable .event a
+	{
+		background: #fff !important;
+		color: #000 !important;
+	}
+}
