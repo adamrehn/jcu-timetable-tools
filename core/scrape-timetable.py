@@ -82,7 +82,7 @@ class TimetableScraper:
 	def _transform_filters(self, filters, sp, campus):
 		transformed = []
 		for currFilter in filters:
-			currFilter = currFilter.replace('*', '.*')
+			currFilter = currFilter.replace('*', '.+')
 			transformed.append( currFilter + '.*_' + campus.upper() + '.*_' + sp.upper() )
 		
 		return transformed
