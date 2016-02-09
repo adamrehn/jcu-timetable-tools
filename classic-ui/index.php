@@ -51,10 +51,10 @@ $campuses = Array(
 	'CNS' => 'Cairns Smithfield',
 	'ISA' => 'Mount Isa',
 	'MKY' => 'Mackay',
+	'TSV' => 'Townsville Douglas',
 	'TCC' => 'Townsville City',
 	'TIS' => 'Thursday Island',
 	'TMH' => 'Townsville Mater Hospital',
-	'TSV' => 'Townsville Douglas',
 	'TTH' => 'The Townsville Hospital'
 );
 
