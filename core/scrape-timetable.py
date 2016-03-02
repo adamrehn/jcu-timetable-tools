@@ -156,7 +156,7 @@ class TimetableScraper:
             headers=headers)
 
         # Extract the data from the timetable list view
-        parsedPage = BeautifulSoup(timetableData.text, 'html.parser')
+        parsedPage = self._parse_content(timetableData)
         tableRows = parsedPage.select('.cyon_table tbody tr')
 
         # Remove hidden text used for sortng data
