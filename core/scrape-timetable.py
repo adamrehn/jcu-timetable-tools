@@ -2,13 +2,15 @@
 from bs4 import BeautifulSoup
 from flask import Flask
 from flask import request
+import datetime
 import requests
 import json
 import re
 
 # The URLs for the login page and the main timetable page
-LOGIN_PAGE = 'https://timetable.jcu.edu.au/2016/Login.aspx'
-MAIN_PAGE = 'https://timetable.jcu.edu.au/2016/Default.aspx'
+CURRENT_YEAR = datetime.datetime.now().year
+LOGIN_PAGE = 'https://timetable.jcu.edu.au/%i/Login.aspx' % CURRENT_YEAR
+MAIN_PAGE = 'https://timetable.jcu.edu.au/%i/Default.aspx' % CURRENT_YEAR
 
 # The list of valid campus codes, from
 # <https://www.jcu.edu.au/__data/assets/pdf_file/0003/202899/TT-Information-for-Students.pdf>
