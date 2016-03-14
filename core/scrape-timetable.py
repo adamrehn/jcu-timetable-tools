@@ -30,6 +30,7 @@ CAMPUS_CODES = {
 
 # Mapping specifying the weeks to display, based on a given study period
 WEEKS_MAPPING = {
+    'academic_year': '1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;5;;;;;;;;',
     'sp1':  '9;10;11;12;13;14;15;16;18;19;20;21;22',
     'sp10': '48;49;50;51;52;53;54',
     'sp11': '48;49;50;51;52;53;54;55;56;57;58;59',
@@ -98,9 +99,8 @@ class TimetableScraper:
     def _extract_dates(self, elem):
         return ' '.join(list(elem.stripped_strings)).replace('\u2011', '-')
 
-    # Performs the scrape
-    def scrape(self, filters, campus, sp):
-
+    # Initiate the login session to the site
+    def _initiate_session(self):
         # Request the login page
         loginPage = self._session.get(LOGIN_PAGE)
 
@@ -113,52 +113,13 @@ class TimetableScraper:
         ]
         headers = {'Referer': LOGIN_PAGE}
         loginReq = self._session.post(LOGIN_PAGE, data=params, headers=headers)
+        return loginReq
 
-        # Navigate to the subject selection page
-        params = self._extract_hidden_fields(self._parse_content(loginReq))
-        params['__EVENTTARGET'] = 'LinkBtn_modules'
-        params = list(params.items()) + [
-            ('tLinkType', 'information')
-        ]
-        headers['Referer'] = MAIN_PAGE
-        uiPage = self._session.post(MAIN_PAGE, data=params, headers=headers)
-        uiPageContent = self._parse_content(uiPage)
-
-        # Extract the subject list
-        subjectList = uiPageContent.select('#dlObject option')
-        subjectValues = list(s['value'] for s in subjectList)
-        subjectLabels = list(s.text.split(' - ')[0] for s in subjectList)
-        subjects = {}
-        for index, key in enumerate(subjectLabels):
-            subjects[key] = subjectValues[index]
-
-        # Match subjects using the supplied parameters
-        matches = self._match_subjects(
-            subjects,
-            self._transform_filters(filters, sp, campus))
-
-        # Render the timetable for the selected subjects
-        params = self._extract_hidden_fields(uiPageContent)
-        params = list(params.items()) + [
-            ('tLinkType', 'modules'),
-            ('dlFilter2', '%'),
-            ('dlFilter', ''),
-            ('tWildcard', ''),
-            ('lbWeeks', WEEKS_MAPPING[sp]),
-            ('lbDays', '1-7'),
-            ('dlPeriod', '1-34'),
-            ('dlType', 'jcu_module_list;cyon_reports_list_url;dummy'),
-            ('bGetTimetable', 'View+Timetable')
-        ]
-        for subject in matches:
-            params.append(('dlObject', subject))
-        timetableData = self._session.post(
-            MAIN_PAGE,
-            data=params,
-            headers=headers)
-
+    def _process_events(self, response):
+        """ Parses the table listing from a response and returns events.
+        """
         # Extract the data from the timetable list view
-        parsedPage = self._parse_content(timetableData)
+        parsedPage = self._parse_content(response)
         tableRows = parsedPage.select('.cyon_table tbody tr')
 
         # Remove hidden text used for sortng data
@@ -196,6 +157,93 @@ class TimetableScraper:
 
         # Return processed event data
         return processedEvents
+
+    # Performs the scrape
+    def scrape(self, filters, campus, sp):
+        loginReq = self._initiate_session()
+        # Navigate to the subject selection page
+        params = self._extract_hidden_fields(self._parse_content(loginReq))
+        params['__EVENTTARGET'] = 'LinkBtn_modules'
+        params = list(params.items()) + [
+            ('tLinkType', 'information')
+        ]
+        headers = {'Referer': MAIN_PAGE}
+        uiPage = self._session.post(MAIN_PAGE, data=params, headers=headers)
+        uiPageContent = self._parse_content(uiPage)
+
+        # Extract the subject list
+        subjectList = uiPageContent.select('#dlObject option')
+        subjectValues = list(s['value'] for s in subjectList)
+        subjectLabels = list(s.text.split(' - ')[0] for s in subjectList)
+        subjects = {}
+        for index, key in enumerate(subjectLabels):
+            subjects[key] = subjectValues[index]
+
+        # Match subjects using the supplied parameters
+        matches = self._match_subjects(
+            subjects,
+            self._transform_filters(filters, sp, campus))
+
+        # Render the timetable for the selected subjects
+        params = self._extract_hidden_fields(uiPageContent)
+        params = list(params.items()) + [
+            ('tLinkType', 'modules'),
+            ('dlFilter2', '%'),
+            ('dlFilter', ''),
+            ('tWildcard', ''),
+            ('lbWeeks', WEEKS_MAPPING[sp]),
+            ('lbDays', '1-7'),
+            ('dlPeriod', '1-34'),
+            ('dlType', 'jcu_module_list;cyon_reports_list_url;dummy'),
+            ('bGetTimetable', 'View+Timetable')
+        ]
+        for subject in matches:
+            params.append(('dlObject', subject))
+        timetableData = self._session.post(
+            MAIN_PAGE,
+            data=params,
+            headers=headers)
+        return self._process_events(timetableData)
+
+    def scrape_room_timetable(self, room_code):
+        """ Scrape room bookings on the timetable for the academic year.
+        """
+        loginReq = self._initiate_session()
+
+        # Navigate to the room selection page
+        params = self._extract_hidden_fields(self._parse_content(loginReq))
+        params['__EVENTTARGET'] = 'LinkBtn_locations'
+        params = list(params.items()) + [
+            ('tLinkType', 'information')
+        ]
+        headers = {'Referer': MAIN_PAGE}
+        roomSearchPage = self._session.post(
+            MAIN_PAGE, data=params, headers=headers)
+        roomSearchPageContent = self._parse_content(roomSearchPage)
+
+        backendRoomCodeTag = roomSearchPageContent.select(
+            'option[value*=%s]' % room_code)
+        # Is a valid room code
+        if backendRoomCodeTag:
+            backend_room_code = backendRoomCodeTag[0].attrs.get('value')
+
+            params = self._extract_hidden_fields(roomSearchPageContent)
+            params['dlFilter2'] = '%'
+            params['dlFilter'] = '%'
+            params['tWildcard'] = ''
+            params['dlObject'] = backend_room_code
+            params['lbWeeks'] = WEEKS_MAPPING['academic_year']
+            params['lbDays'] = '1-7'
+            params['dlPeriod'] = '1-34'
+            params['dlType'] = 'jcu_location_list;cyon_reports_list_url;dummy'
+            params['bGetTimetable'] = 'View+Timetable'
+            roomTimetablePage = self._session.post(
+                MAIN_PAGE, data=list(params.items()), headers=headers)
+
+            return self._process_events(roomTimetablePage) or []
+        else:
+            raise ValueError('Room code %r was not found in the timetale.'
+                             % room_code)
 
 
 # Sanitises user input for the list of subject codes
